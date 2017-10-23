@@ -51,6 +51,45 @@ h1 {
 }
 ```
 
+## Options
+
+### `retainFirstOccurrence`
+
+Type: `Boolean`<br/>
+Default: `false`
+
+When `true`, only the first occurrence of any duplicates found will be retained.
+
+When `false`, the last occurrence of any duplicates found will be retained _(this
+is the default behavior)_.
+
+#### Example
+
+> When `retainFirstOccurrence` = `true`.
+
+**Input**
+```css
+h1 {
+    margin: 0 auto;
+}
+h2 {
+    color: #333;
+}
+h1 {
+    margin: 0 auto;
+}
+```
+
+**Output**
+```css
+h1 {
+    margin: 0 auto;
+}
+h2 {
+    color: #333;
+}
+```
+
 ## Usage
 
 See the [PostCSS documentation](https://github.com/postcss/postcss#usage) for

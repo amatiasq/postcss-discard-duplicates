@@ -69,8 +69,12 @@ function equals (a, b) {
     return true;
 }
 
-function dedupeRule (last, nodes) {
-    let index = nodes.indexOf(last) -1;
+function removeNode (node) {
+    node.remove();
+}
+
+function dedupeRule (last, nodes, options) {
+    let index = nodes.indexOf(last) - 1;
     while (index >= 0) {
         const node = nodes[index--];
         if (
@@ -80,26 +84,41 @@ function dedupeRule (last, nodes) {
         ) {
             last.each(child => {
                 if (child.type === 'decl') {
-                    dedupeNode(child, node.nodes);
+                    dedupeNode(child, node.nodes, options);
                 }
             });
 
-            if (empty(node)) {
-                node.remove();
+            if (!options.retainFirstOccurrence && empty(node)) {
+                removeNode(node);
             }
         }
     }
+
+    if (options.retainFirstOccurrence && empty(last)) {
+        removeNode(last);
+    }
 }
 
-function dedupeNode (last, nodes) {
+function dedupeNode (last, nodes, options) {
     let index = !!~nodes.indexOf(last)
         ? nodes.indexOf(last) - 1
         : nodes.length - 1;
 
+    let prevNode;
+    let processMatchedNode = removeNode;
+
+    if (options.retainFirstOccurrence) {
+        prevNode = last;
+        processMatchedNode = (node) => {
+            removeNode(prevNode);
+            prevNode = node;
+        };
+    }
+
     while (index >= 0) {
         const node = nodes[index--];
         if (node && equals(node, last)) {
-            node.remove();
+            processMatchedNode(node);
         }
     }
 }
@@ -111,22 +130,24 @@ const handlers = {
     comment: noop,
 };
 
-function dedupe (root) {
-    let nodes = root.nodes;
+function init (options = {}) {
+    return function dedupe (root) {
+        let nodes = root.nodes;
 
-    if (!nodes) {
-        return;
-    }
-
-    let index = nodes.length - 1;
-    while (index >= 0) {
-        let last = nodes[index--];
-        if (!last || !last.parent) {
-            continue;
+        if (!nodes) {
+            return;
         }
-        dedupe(last);
-        handlers[last.type](last, nodes);
-    }
+
+        let index = nodes.length - 1;
+        while (index >= 0) {
+            let last = nodes[index--];
+            if (!last || !last.parent) {
+                continue;
+            }
+            dedupe(last);
+            handlers[last.type](last, nodes, options);
+        }
+    };
 }
 
-export default plugin('postcss-discard-duplicates', () => dedupe);
+export default plugin('postcss-discard-duplicates', init);
